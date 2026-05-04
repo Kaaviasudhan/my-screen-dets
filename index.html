@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Device Detection Test</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #6366f1, #22d3ee);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #94a3b8;
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #6366f1, #22d3ee);
+    }
+
+    .card.warning::before {
+      background: linear-gradient(90deg, #f59e0b, #ef4444);
+    }
+
+    .card.success::before {
+      background: linear-gradient(90deg, #10b981, #22d3ee);
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #94a3b8;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title .icon {
+      font-size: 16px;
+    }
+
+    /* ── Device Result Banner ── */
+    .device-banner {
+      background: #1e293b;
+      border: 2px solid #334155;
+      border-radius: 16px;
+      padding: 28px;
+      text-align: center;
+      max-width: 1200px;
+      margin: 0 auto 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .device-banner.is-desktop {
+      border-color: #6366f1;
+      background: linear-gradient(135deg, #1e1b4b 0%, #1e293b 100%);
+    }
+
+    .device-banner.is-mobile {
+      border-color: #10b981;
+      background: linear-gradient(135deg, #022c22 0%, #1e293b 100%);
+    }
+
+    .device-banner.is-uncertain {
+      border-color: #f59e0b;
+      background: linear-gradient(135deg, #292524 0%, #1e293b 100%);
+    }
+
+    .device-emoji {
+      font-size: 64px;
+      display: block;
+      margin-bottom: 12px;
+    }
+
+    .device-label {
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: 2px;
+    }
+
+    .device-label.desktop { color: #818cf8; }
+    .device-label.mobile  { color: #34d399; }
+    .device-label.uncertain { color: #fbbf24; }
+
+    .device-score {
+      font-size: 14px;
+      color: #94a3b8;
+      margin-top: 8px;
+    }
+
+    /* ── Signal Rows ── */
+    .signal-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #1e293b;
+      gap: 12px;
+    }
+
+    .signal-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .signal-label {
+      font-size: 13px;
+      color: #94a3b8;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .signal-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: #e2e8f0;
+      text-align: right;
+      word-break: break-all;
+      max-width: 55%;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-green  { background: #064e3b; color: #34d399; }
+    .badge-red    { background: #450a0a; color: #f87171; }
+    .badge-yellow { background: #451a03; color: #fbbf24; }
+    .badge-blue   { background: #1e1b4b; color: #818cf8; }
+    .badge-gray   { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+
+    /* ── Score Bar ── */
+    .score-bar-wrap {
+      margin-top: 16px;
+    }
+
+    .score-bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+
+    .score-bar-track {
+      height: 10px;
+      background: #334155;
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.6s ease;
+    }
+
+    /* ── Manipulation Alert ── */
+    .alert {
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 13px;
+      line-height: 1.6;
+      margin-top: 0;
+    }
+
+    .alert-red {
+      background: #450a0a;
+      border: 1px solid #7f1d1d;
+      color: #fca5a5;
+    }
+
+    .alert-green {
+      background: #064e3b;
+      border: 1px solid #065f46;
+      color: #6ee7b7;
+    }
+
+    .alert-yellow {
+      background: #451a03;
+      border: 1px solid #78350f;
+      color: #fde68a;
+    }
+
+    .alert-title {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ── Live Monitor ── */
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      background: #ef4444;
+      border-radius: 50%;
+      display: inline-block;
+      animation: pulse 1.2s infinite;
+      margin-right: 6px;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .live-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: #f87171;
+      margin: 4px 0;
+    }
+
+    .live-label {
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .live-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .live-box {
+      background: #0f172a;
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    /* ── Assessment Simulation ── */
+    .assessment-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-desktop {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: white;
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
+    }
+
+    .btn-desktop:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(99, 102, 241, 0.5);
+    }
+
+    .btn-mobile {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35);
+    }
+
+    .btn-mobile:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(16, 185, 129, 0.5);
+    }
+
+    .behavior-box {
+      background: #0f172a;
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 14px;
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 1.7;
+    }
+
+    .behavior-box strong {
+      color: #e2e8f0;
+    }
+
+    /* ── Log Console ── */
+    .log-console {
+      background: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 0;
+    }
+
+    .log-entry {
+      padding: 3px 0;
+      border-bottom: 1px solid #0f172a;
+      display: flex;
+      gap: 10px;
+    }
+
+    .log-time { color: #475569; min-width: 80px; }
+    .log-msg  { color: #94a3b8; }
+    .log-msg.ok     { color: #34d399; }
+    .log-msg.warn   { color: #fbbf24; }
+    .log-msg.danger { color: #f87171; }
+    .log-msg.info   { color: #60a5fa; }
+
+    /* ── UA Parser ── */
+    .ua-text {
+      background: #020617;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: #64748b;
+      word-break: break-all;
+      line-height: 1.6;
+      margin-top: 8px;
+    }
+
+    /* ── Refresh button ── */
+    .refresh-btn {
+      display: block;
+      margin: 20px auto 0;
+      padding: 10px 28px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 999px;
+      color: #94a3b8;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .refresh-btn:hover {
+      background: #334155;
+      color: #e2e8f0;
+    }
+
+    .full-width { grid-column: 1 / -1; }
+
+    @media (max-width: 600px) {
+      body { padding: 16px; }
+      h1   { font-size: 22px; }
+      .device-label { font-size: 28px; }
+      .device-emoji { font-size: 48px; }
+    }
+  </style>
+</head>
+<body>
+
+<h1>🔬 Device Detection Test Lab</h1>
+<p class="subtitle">
+  Validates <code>ImmutableDeviceDetector</code> — resize window or open DevTools to test resistance
+</p>
+
+<!-- ── DEVICE RESULT BANNER ── -->
+<div class="device-banner" id="deviceBanner">
+  <span class="device-emoji" id="deviceEmoji">⏳</span>
+  <div class="device-label" id="deviceLabel">Detecting…</div>
+  <div class="device-score" id="deviceScore"></div>
+</div>
+
+<div class="grid">
+
+  <!-- ── CARD 1 : Raw Signature ── -->
+  <div class="card">
+    <div class="card-title"><span class="icon">🔒</span> Frozen Signature (Immutable)</div>
+
+    <div class="signal-row">
+      <span class="signal-label">Physical Screen Width</span>
+      <span class="signal-value" id="sig-physW">—</span>
+    </div>
+    <div class="signal-row">
+      <span class="signal-label">Physical Screen Height</span>
+      <span class="signal-value" id="sig-physH">—</span>
+    </div>
+    <div class="signal-row">
+      <span class="signal-label">Avail Width / Height</span>
+      <span class="signal-value" id="sig-avail">—</span>
+    </div>
+    <div class="signal-row">
+      <span class="signal-label">Device Pixel Ratio</span>
+      <span class="signal-value" id="sig-dpr">—</span>
+    </div>
+    <div class="signal-row">
+      <span class="signal-label">Hardware Concurrency</span>
+      <span class="signal-value" id="sig-hw">—</span>
+    </div>
+    <div class="signal-row">
+      <span class="signal-label">Device Memory</span>
+      <span class="signal-value" id="sig-mem">—</span>
+    </div>
+    <div class="signal-row">
+      <span class="signal-label">Max Touch Points</span>
+      <span class="signal-value" id="sig-touch">—</span>
+    </div>
+    <div class="signal-row">
+      <span class="signal-label">Color / Pixel Depth</span>
+      <span class="signal-value" id="sig-color">—</span>
+    </div>
+    <div class="signal-row">
+      <span class="signal-label">Platform</span>
+      <span class="signal-value" id="sig-platform">—</span>
+    </div>
+    <div class="signal-row">
+      <span class="signal-label">Captured At</span>
+      <span class="signal-value" id="sig-time">—</span>
+    </div>
+
+    <div class="ua-text" id="sig-ua">—</div>
+  </div>
+
+  <!-- ── CARD 2 : Scoring Breakdown ── -->
+  <div class="card">
+    <div class="card-title"><span class="icon">📊</span> Signal Scoring Breakdown</div>
+
+    <div class="signal-row">
+      <span class="signal-label">Physical Width Signal</span>
+      <span class="signal-value" id="score-width">—</span>
+    </div>
+    <div class="signal-row">
+      <span class="signal-label">Touch Points Signal</span>
+      <span class="signal-value" id="score-touch">—</span>
+    </div>
+    <div class="signal-row">
+      <span class="signal-label">User Agent Signal</span>
+      <span class="signal-value" id="score-ua">—</span>
+    </div>
+    <div class="signal-row">
+      <span class="signal-label">Platform Signal</span>
+      <span class="signal-value" id="score-platform">—</span>
+    </div>
+    <div class="signal-row">
+      <span class="signal-label"><strong>Total Score</strong></span>
+      <span class="signal-value" id="score-total">—</span>
+    </div>
+    <div class="signal-row">
+      <span class="signal-label">Threshold (> 2 = desktop)</span>
+      <span class="signal-value"><span class="badge badge-blue">2</span></span>
+    </div>
+    <div class="signal-row">
+      <span class="signal-label"><strong>Final Decision</strong></span>
+      <span class="signal-value" id="score-decision">—</span>
+    </div>
+
+    <div class="score-bar-wrap">
+      <div class="score-bar-label">
+        <span>← Mobile</span>
+        <span>Desktop →</span>
+      </div>
+      <div class="score-bar-track">
+        <div class="score-bar-fill" id="scoreBar" style="width:50%;background:#6366f1;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CARD 3 : Manipulation Detector ── -->
+  <div class="card" id="manipCard">
+    <div class="card-title"><span class="icon">🛡️</span> Manipulation / DevTools Detector</div>
+    <div id="manipResult">Checking…</div>
+
+    <div class="signal-row" style="margin-top:14px;">
+      <span class="signal-label">outerWidth − innerWidth</span>
+      <span class="signal-value" id="man-wDiff">—</span>
+    </div>
+    <div class="signal-row">
+      <span class="signal-label">outerHeight − innerHeight</span>
+      <span class="signal-value" id="man-hDiff">—</span>
+    </div>
+    <div class="signal-row">
+      <span class="signal-label">Viewport vs Physical ratio</span>
+      <span class="signal-value" id="man-ratio">—</span>
+    </div>
+    <div class="signal-row">
+      <span class="signal-label">DevTools Threshold (160px)</span>
+      <span class="signal-value"><span class="badge badge-gray">160 px</span></span>
+    </div>
+  </div>
+
+  <!-- ── CARD 4 : Live Viewport Monitor ── -->
+  <div class="card">
+    <div class="card-title">
+      <span class="icon"><span class="live-dot"></span></span>
+      Live Viewport Monitor (Updates on Resize)
+    </div>
+    <div class="live-grid">
+      <div class="live-box">
+        <div class="live-value" id="live-iw">—</div>
+        <div class="live-label">innerWidth</div>
+      </div>
+      <div class="live-box">
+        <div class="live-value" id="live-ih">—</div>
+        <div class="live-label">innerHeight</div>
+      </div>
+      <div class="live-box">
+        <div class="live-value" id="live-ow">—</div>
+        <div class="live-label">outerWidth</div>
+      </div>
+      <div class="live-box">
+        <div class="live-value" id="live-oh">—</div>
+        <div class="live-label">outerHeight</div>
+      </div>
+    </div>
+
+    <div class="signal-row" style="margin-top:14px;">
+      <span class="signal-label">Device Type (locked)</span>
+      <span class="signal-value" id="live-dtype">—</span>
+    </div>
+    <div class="signal-row">
+      <span class="signal-label">Physical Width (locked)</span>
+      <span class="signal-value" id="live-phys">—</span>
+    </div>
+    <div class="signal-row">
+      <span class="signal-label">Discrepancy</span>
+      <span class="signal-value" id="live-disc">—</span>
+    </div>
+  </div>
+
+  <!-- ── CARD 5 : Assessment Simulation ── -->
+  <div class="card success">
+    <div class="card-title"><span class="icon">🚀</span> Assessment Navigation Simulation</div>
+    <button class="assessment-btn" id="assessBtn" onclick="simulateAssessment()">
+      Start Assessment
+    </button>
+    <div class="behavior-box" id="behaviorBox">
+      <strong>Expected behavior:</strong> Loading…
+    </div>
+  </div>
+
+  <!-- ── CARD 6 : Freeze Test ── -->
+  <div class="card warning">
+    <div class="card-title"><span class="icon">❄️</span> Object.freeze() Tamper Test</div>
+
+    <div class="signal-row">
+      <span class="signal-label">Signature is frozen?</span>
+      <span class="signal-value" id="freeze-sig">—</span>
+    </div>
+    <div class="signal-row">
+      <span class="signal-label">Detector is frozen?</span>
+      <span class="signal-value" id="freeze-det">—</span>
+    </div>
+    <div class="signal-row">
+      <span class="signal-label">Mutation attempt result</span>
+      <span class="signal-value" id="freeze-mut">—</span>
+    </div>
+    <div class="signal-row">
+      <span class="signal-label">deviceType after mutation</span>
+      <span class="signal-value" id="freeze-after">—</span>
+    </div>
+
+    <button class="refresh-btn" onclick="runFreezeTest()">
+      🔁 Re-run Tamper Test
+    </button>
+  </div>
+
+  <!-- ── CARD 7 : Known Issues / Edge Cases ── -->
+  <div class="card">
+    <div class="card-title"><span class="icon">⚠️</span> Known Issues & Edge Cases</div>
+
+    <div id="edgeCaseList"></div>
+  </div>
+
+  <!-- ── CARD 8 : Event Log ── (full width) -->
+  <div class="card full-width">
+    <div class="card-title">
+      <span class="icon"><span class="live-dot"></span></span>
+      Event Log
+    </div>
+    <div class="log-console" id="logConsole"></div>
+  </div>
+
+</div>
+
+<button class="refresh-btn" onclick="location.reload()">
+  🔄 Reload Page (Re-run Detection from Scratch)
+</button>
+
+<br /><br />
+
+<!-- ═══════════════════════════════════════════════
+     DEVICE DETECTOR  (your exact class, verbatim)
+════════════════════════════════════════════════ -->
+<script>
+// ─────────────────────────────────────────────────────────────────
+// YOUR EXACT CLASS — zero modifications
+// ─────────────────────────────────────────────────────────────────
+class ImmutableDeviceDetector {
+  constructor() {
+    this.signature = {
+      physicalWidth:       window.screen.width,
+      physicalHeight:      window.screen.height,
+      availWidth:          window.screen.availWidth,
+      availHeight:         window.screen.availHeight,
+      colorDepth:          window.screen.colorDepth,
+      pixelDepth:          window.screen.pixelDepth,
+      dpr:                 window.devicePixelRatio,
+      hardwareConcurrency: navigator.hardwareConcurrency || 0,
+      deviceMemory:        navigator.deviceMemory       || 0,
+      maxTouchPoints:      navigator.maxTouchPoints     || 0,
+      platform:            navigator.platform,
+      userAgent:           navigator.userAgent,
+      timestamp:           Date.now()
+    };
+    Object.freeze(this.signature);
+    this.deviceType = this._determineDeviceType();
+    Object.freeze(this);
+  }
+
+  _determineDeviceType() {
+    const { physicalWidth, maxTouchPoints, userAgent, platform } = this.signature;
+    let score = 0;
+
+    // Signal 1: Physical screen width
+    if      (physicalWidth >= 1024) score += 3;
+    else if (physicalWidth >= 768)  score += 1;
+    else                             score -= 2;
+
+    // Signal 2: Touch points
+    if      (maxTouchPoints === 0)              score += 2;
+    else if (maxTouchPoints > 0 && maxTouchPoints <= 2) score += 0;
+    else                                         score -= 2;
+
+    // Signal 3: User agent
+    const mobileKeywords = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+    if (mobileKeywords.test(userAgent)) score -= 2;
+    else                                 score += 1;
+
+    // Signal 4: Platform
+    const desktopPlatforms = /Win|Mac|Linux/i;
+    if (desktopPlatforms.test(platform)) score += 1;
+    else                                  score -= 1;
+
+    return score > 2 ? 'desktop' : 'mobile';
+  }
+
+  isDesktop()    { return this.deviceType === 'desktop'; }
+  isMobile()     { return this.deviceType === 'mobile';  }
+  getSignature() { return this.signature; }
+
+  detectManipulation() {
+    const currentViewportWidth = window.innerWidth;
+    const physicalWidth        = this.signature.physicalWidth;
+
+    if (this.isDesktop() && currentViewportWidth < physicalWidth * 0.6) {
+      return {
+        manipulated: true,
+        reason: 'viewport_mismatch',
+        details: {
+          physicalWidth,
+          currentViewportWidth,
+          difference: physicalWidth - currentViewportWidth
+        }
+      };
+    }
+
+    const devToolsOpen = this._isDevToolsOpen();
+    if (devToolsOpen) {
+      return {
+        manipulated: true,
+        reason: 'devtools_detected',
+        details: { devToolsOpen: true }
+      };
+    }
+
+    return { manipulated: false };
+  }
+
+  _isDevToolsOpen() {
+    const threshold  = 160;
+    const widthDiff  = window.outerWidth  - window.innerWidth;
+    const heightDiff = window.outerHeight - window.innerHeight;
+    return widthDiff > threshold || heightDiff > threshold;
+  }
+}
+
+// ── Singleton — created ONCE when script runs ──
+const deviceDetector = new ImmutableDeviceDetector();
+</script>
+
+<!-- ═══════════════════════════════════════════════
+     TEST-LAB UI LOGIC
+════════════════════════════════════════════════ -->
+<script>
+// ── Tiny logger ──────────────────────────────────────────────────
+const logEntries = [];
+function log(msg, level = 'info') {
+  const time = new Date().toLocaleTimeString();
+  logEntries.unshift({ time, msg, level });
+  if (logEntries.length > 60) logEntries.pop();
+  renderLog();
+}
+
+function renderLog() {
+  const el = document.getElementById('logConsole');
+  el.innerHTML = logEntries.map(e =>
+    `<div class="log-entry">
+       <span class="log-time">${e.time}</span>
+       <span class="log-msg ${e.level}">${e.msg}</span>
+     </div>`
+  ).join('');
+}
+
+// ── Scoring breakdown (mirrors _determineDeviceType) ─────────────
+function getScoreBreakdown(sig) {
+  const breakdown = { widthScore: 0, touchScore: 0, uaScore: 0, platformScore: 0 };
+  let total = 0;
+
+  // Width
+  if      (sig.physicalWidth >= 1024) { breakdown.widthScore = 3;  total += 3; }
+  else if (sig.physicalWidth >= 768)  { breakdown.widthScore = 1;  total += 1; }
+  else                                { breakdown.widthScore = -2; total -= 2; }
+
+  // Touch
+  if      (sig.maxTouchPoints === 0)                              { breakdown.touchScore = 2;  total += 2; }
+  else if (sig.maxTouchPoints > 0 && sig.maxTouchPoints <= 2)     { breakdown.touchScore = 0;  }
+  else                                                             { breakdown.touchScore = -2; total -= 2; }
+
+  // UA
+  const mobileKw = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+  if (mobileKw.test(sig.userAgent)) { breakdown.uaScore = -2; total -= 2; }
+  else                               { breakdown.uaScore =  1; total +=  1; }
+
+  // Platform
+  const deskPlatforms = /Win|Mac|Linux/i;
+  if (deskPlatforms.test(sig.platform)) { breakdown.platformScore =  1; total +=  1; }
+  else                                   { breakdown.platformScore = -1; total -=  1; }
+
+  breakdown.total    = total;
+  breakdown.decision = total > 2 ? 'desktop' : 'mobile';
+  return breakdown;
+}
+
+// ── Badge helpers ─────────────────────────────────────────────────
+function scoreBadge(n) {
+  const cls = n > 0 ? 'badge-green' : n < 0 ? 'badge-red' : 'badge-gray';
+  return `<span class="badge ${cls}">${n > 0 ? '+' : ''}${n}</span>`;
+}
+
+function boolBadge(val) {
+  return val
+    ? '<span class="badge badge-green">YES ✓</span>'
+    : '<span class="badge badge-red">NO ✗</span>';
+}
+
+// ── Populate Signature Card ───────────────────────────────────────
+function renderSignature(sig) {
+  document.getElementById('sig-physW').textContent    = sig.physicalWidth + ' px';
+  document.getElementById('sig-physH').textContent    = sig.physicalHeight + ' px';
+  document.getElementById('sig-avail').textContent    = `${sig.availWidth} × ${sig.availHeight} px`;
+  document.getElementById('sig-dpr').textContent      = sig.dpr + 'x';
+  document.getElementById('sig-hw').textContent       = sig.hardwareConcurrency
+                                                          ? sig.hardwareConcurrency + ' cores'
+                                                          : 'Not reported';
+  document.getElementById('sig-mem').textContent      = sig.deviceMemory
+                                                          ? sig.deviceMemory + ' GB'
+                                                          : 'Not reported';
+  document.getElementById('sig-touch').innerHTML      = `${sig.maxTouchPoints} &nbsp;${
+    sig.maxTouchPoints === 0
+      ? '<span class="badge badge-blue">no touch</span>'
+      : sig.maxTouchPoints <= 2
+        ? '<span class="badge badge-yellow">limited</span>'
+        : '<span class="badge badge-green">multi-touch</span>'
+  }`;
+  document.getElementById('sig-color').textContent    = `${sig.colorDepth}bit / ${sig.pixelDepth}bit`;
+  document.getElementById('sig-platform').textContent = sig.platform || 'Unknown';
+  document.getElementById('sig-time').textContent     = new Date(sig.timestamp).toLocaleTimeString();
+  document.getElementById('sig-ua').textContent       = sig.userAgent;
+}
+
+// ── Populate Score Card ───────────────────────────────────────────
+function renderScores(sig) {
+  const b = getScoreBreakdown(sig);
+
+  document.getElementById('score-width').innerHTML    = scoreBadge(b.widthScore)
+    + ` <small style="color:#64748b"> (width: ${sig.physicalWidth}px)</small>`;
+  document.getElementById('score-touch').innerHTML    = scoreBadge(b.touchScore)
+    + ` <small style="color:#64748b"> (${sig.maxTouchPoints} pts)</small>`;
+  document.getElementById('score-ua').innerHTML       = scoreBadge(b.uaScore);
+  document.getElementById('score-platform').innerHTML = scoreBadge(b.platformScore)
+    + ` <small style="color:#64748b"> (${sig.platform})</small>`;
+  document.getElementById('score-total').innerHTML    = scoreBadge(b.total);
+  document.getElementById('score-decision').innerHTML =
+    b.decision === 'desktop'
+      ? '<span class="badge badge-blue">DESKTOP</span>'
+      : '<span class="badge badge-green">MOBILE</span>';
+
+  // Score bar: map score range [-6, 7] → [0%, 100%]
+  const pct = Math.round(((b.total + 6) / 13) * 100);
+  const bar = document.getElementById('scoreBar');
+  bar.style.width = Math.max(4, Math.min(100, pct)) + '%';
+  bar.style.background = b.decision === 'desktop'
+    ? 'linear-gradient(90deg,#6366f1,#818cf8)'
+    : 'linear-gradient(90deg,#10b981,#34d399)';
+}
+
+// ── Populate Device Banner ────────────────────────────────────────
+function renderBanner(detector) {
+  const banner = document.getElementById('deviceBanner');
+  const emoji  = document.getElementById('deviceEmoji');
+  const label  = document.getElementById('deviceLabel');
+  const score  = document.getElementById('deviceScore');
+  const sig    = detector.getSignature();
+  const b      = getScoreBreakdown(sig);
+
+  banner.className = 'device-banner is-' + detector.deviceType;
+  emoji.textContent = detector.isDesktop() ? '🖥️' : '📱';
+  label.textContent = detector.deviceType.toUpperCase();
+  label.className   = 'device-label ' + detector.deviceType;
+  score.textContent = `Score: ${b.total} / 7  |  Threshold: > 2 = desktop`;
+}
+
+// ── Populate Manipulation Card ────────────────────────────────────
+function renderManipulation(detector) {
+  const result = detector.detectManipulation();
+  const sig    = detector.getSignature();
+  const wDiff  = window.outerWidth  - window.innerWidth;
+  const hDiff  = window.outerHeight - window.innerHeight;
+  const ratio  = (window.innerWidth / sig.physicalWidth * 100).toFixed(1);
+
+  document.getElementById('man-wDiff').innerHTML =
+    `${wDiff}px ${wDiff > 160 ? '<span class="badge badge-red">OVER THRESHOLD</span>' : ''}`;
+  document.getElementById('man-hDiff').innerHTML =
+    `${hDiff}px ${hDiff > 160 ? '<span class="badge badge-red">OVER THRESHOLD</span>' : ''}`;
+  document.getElementById('man-ratio').innerHTML =
+    `${ratio}% ${parseFloat(ratio) < 60 ? '<span class="badge badge-yellow">< 60%</span>' : ''}`;
+
+  const el = document.getElementById('manipResult');
+
+  if (!result.manipulated) {
+    el.innerHTML = `
+      <div class="alert alert-green">
+        <div class="alert-title">✅ No Manipulation Detected</div>
+        Viewport matches expected desktop dimensions.
+        DevTools does not appear to be open in device-simulation mode.
+      </div>`;
+    log('Manipulation check: CLEAN', 'ok');
+  } else if (result.reason === 'devtools_detected') {
+    el.innerHTML = `
+      <div class="alert alert-yellow">
+        <div class="alert-title">⚠️ DevTools Appears Open</div>
+        outer/inner dimension gap exceeds 160px threshold.
+        Device type is still locked as <strong>${detector.deviceType}</strong>.
+      </div>`;
+    log('DevTools detected (outer/inner gap > 160px)', 'warn');
+  } else {
+    el.innerHTML = `
+      <div class="alert alert-red">
+        <div class="alert-title">🚨 Viewport Mismatch Detected</div>
+        Physical: <strong>${result.details.physicalWidth}px</strong> →
+        Current viewport: <strong>${result.details.currentViewportWidth}px</strong>
+        (${result.details.difference}px difference, &lt;60% ratio).
+        Device type remains locked as <strong>${detector.deviceType}</strong>.
+      </div>`;
+    log(`Viewport mismatch: physical=${result.details.physicalWidth}px, viewport=${result.details.currentViewportWidth}px`, 'danger');
+  }
+}
+
+// ── Live Viewport Monitor ─────────────────────────────────────────
+function renderLive(detector) {
+  const sig   = detector.getSignature();
+  const disc  = sig.physicalWidth - window.innerWidth;
+
+  document.getElementById('live-iw').textContent    = window.innerWidth  + 'px';
+  document.getElementById('live-ih').textContent    = window.innerHeight + 'px';
+  document.getElementById('live-ow').textContent    = window.outerWidth  + 'px';
+  document.getElementById('live-oh').textContent    = window.outerHeight + 'px';
+  document.getElementById('live-dtype').innerHTML   =
+    detector.isDesktop()
+      ? '<span class="badge badge-blue">DESKTOP (locked)</span>'
+      : '<span class="badge badge-green">MOBILE (locked)</span>';
+  document.getElementById('live-phys').textContent  = sig.physicalWidth + 'px (immutable)';
+  document.getElementById('live-disc').innerHTML    =
+    `${disc}px ${disc > 200 ? '<span class="badge badge-yellow">large gap</span>' : ''}`;
+}
+
+// ── Assessment Simulation ─────────────────────────────────────────
+function updateAssessmentCard(detector) {
+  const btn = document.getElementById('assessBtn');
+  const box = document.getElementById('behaviorBox');
+
+  if (detector.isDesktop()) {
+    btn.className   = 'assessment-btn btn-desktop';
+    btn.textContent = '🖥️  Start Assessment (Desktop)';
+    box.innerHTML   = `
+      <strong>Expected behavior:</strong><br>
+      ✅ <code>window.open(url, "_blank")</code><br>
+      Assessment opens in a <strong>NEW TAB</strong>.<br>
+      <em style="color:#64748b;font-size:11px;">
+        Even if you resize to mobile viewport in DevTools,
+        the device is locked as desktop.
+      </em>`;
+  } else {
+    btn.className   = 'assessment-btn btn-mobile';
+    btn.textContent = '📱  Start Assessment (Mobile)';
+    box.innerHTML   = `
+      <strong>Expected behavior:</strong><br>
+      ✅ <code>window.location.href = url</code><br>
+      Assessment opens in the <strong>SAME TAB</strong>.`;
+  }
+}
+
+function simulateAssessment() {
+  const url = '#assessment-simulation';
+
+  if (deviceDetector.isDesktop()) {
+    const win = window.open(url, '_blank', 'noopener,noreferrer');
+    if (win) {
+      log('✅ window.open(_blank) called — new tab opened', 'ok');
+    } else {
+      log('⚠️ window.open blocked by browser popup blocker', 'warn');
+      alert('Popup blocked! In production, show a fallback dialog here.');
+    }
+  } else {
+    log('✅ window.location.href — same tab navigation', 'ok');
+    alert('Mobile mode: would navigate same tab.\n(Skipping actual navigation in this demo)');
+  }
+}
+
+// ── Freeze / Tamper Test ──────────────────────────────────────────
+function runFreezeTest() {
+  const sigFrozen = Object.isFrozen(deviceDetector.signature);
+  const detFrozen = Object.isFrozen(deviceDetector);
+
+  document.getElementById('freeze-sig').innerHTML = boolBadge(sigFrozen);
+  document.getElementById('freeze-det').innerHTML = boolBadge(detFrozen);
+
+  // Attempt mutation
+  let mutationBlocked = false;
+  const originalType  = deviceDetector.deviceType;
+  try {
+    deviceDetector.deviceType = 'HACKED';
+  } catch (e) {
+    mutationBlocked = true;
+  }
+  const afterType = deviceDetector.deviceType;
+  if (afterType !== 'HACKED') mutationBlocked = true;
+
+  document.getElementById('freeze-mut').innerHTML =
+    mutationBlocked
+      ? '<span class="badge badge-green">BLOCKED ✓</span>'
+      : '<span class="badge badge-red">SUCCEEDED ✗ (freeze failed!)</span>';
+
+  document.getElementById('freeze-after').innerHTML =
+    `<code>${afterType}</code> ${afterType === originalType
+      ? '<span class="badge badge-green">unchanged ✓</span>'
+      : '<span class="badge badge-red">CHANGED ✗</span>'}`;
+
+  log(`Tamper test: sig=${sigFrozen}, det=${detFrozen}, mutBlocked=${mutationBlocked}`,
+      mutationBlocked ? 'ok' : 'danger');
+}
+
+// ── Edge Case Evaluation ──────────────────────────────────────────
+function renderEdgeCases(sig, detector) {
+  const cases = [
+    {
+      label: 'iPad with mouse (iPadOS 13.4+)',
+      issue: sig.maxTouchPoints > 0 && sig.physicalWidth >= 768,
+      detail: 'iPad may score as desktop due to screen width (≥768px) even though it\'s a tablet.',
+      severity: 'yellow',
+    },
+    {
+      label: 'High-DPI phone (physicalWidth ≥ 1024px)',
+      issue: sig.physicalWidth >= 1024 && sig.maxTouchPoints > 2,
+      detail: 'Some Android phones report physical width > 1024px in landscape. Width alone is not enough.',
+      severity: 'red',
+    },
+    {
+      label: 'Touch-screen laptop (Surface, etc.)',
+      issue: sig.maxTouchPoints > 0 && /Win/i.test(sig.platform),
+      detail: 'Touch points > 0 but platform is Windows. Score treats this as uncertain — correct.',
+      severity: 'yellow',
+    },
+    {
+      label: 'DevTools UA override',
+      issue: /Android|iPhone/i.test(sig.userAgent) && /Win|Mac/i.test(sig.platform),
+      detail: 'UA says mobile but platform says desktop. Platform + screen width will override UA signal.',
+      severity: 'yellow',
+    },
+    {
+      label: 'navigator.deviceMemory not reported',
+      issue: sig.deviceMemory === 0,
+      detail: 'deviceMemory is not used in scoring. If added, missing values must be handled gracefully.',
+      severity: 'gray',
+    },
+    {
+      label: 'SSR / No window object',
+      issue: false, // We're client-side only in this test
+      detail: 'Class will throw ReferenceError on server. Wrap constructor in typeof window !== "undefined".',
+      severity: 'gray',
+    },
+  ];
+
+  const html = cases.map(c => `
+    <div class="signal-row">
+      <span class="signal-label">${c.label}</span>
+      <span class="signal-value">
+        ${c.issue
+          ? `<span class="badge badge-${c.severity}">⚠️ Possible</span>`
+          : '<span class="badge badge-green">✓ OK</span>'}
+      </span>
+    </div>
+    ${c.issue ? `<div style="font-size:11px;color:#64748b;padding:0 0 8px 0;line-height:1.5;">${c.detail}</div>` : ''}
+  `).join('');
+
+  document.getElementById('edgeCaseList').innerHTML = html;
+}
+
+// ── Full Render ───────────────────────────────────────────────────
+function renderAll() {
+  const sig = deviceDetector.getSignature();
+
+  renderBanner(deviceDetector);
+  renderSignature(sig);
+  renderScores(sig);
+  renderManipulation(deviceDetector);
+  renderLive(deviceDetector);
+  updateAssessmentCard(deviceDetector);
+  runFreezeTest();
+  renderEdgeCases(sig, deviceDetector);
+
+  log(`Detection complete → ${deviceDetector.deviceType.toUpperCase()}`, 'info');
+}
+
+// ── Resize listener (ONLY for live monitor + manipulation check) ──
+window.addEventListener('resize', () => {
+  // Device type itself does NOT change — only live stats update
+  renderLive(deviceDetector);
+  renderManipulation(deviceDetector);
+  log(`Resize: innerWidth=${window.innerWidth}px | device locked=${deviceDetector.deviceType}`, 'info');
+});
+
+// ── Boot ──────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  log('Page loaded — ImmutableDeviceDetector initialized', 'info');
+  renderAll();
+});
+</script>
+</body>
+</html>
